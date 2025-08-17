@@ -1,4 +1,0 @@
-route_id,route_short_name
-A,Crosstown
-B,Loop
-C,Connector

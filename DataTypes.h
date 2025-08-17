@@ -26,19 +26,26 @@ struct Time {
     bool operator<=(const Time& other) const { return toSeconds() <= other.toSeconds(); }
 };
 
-struct Stop { int id; std::string name; };
+struct Stop {
+    int id;
+    std::string name;
+    double lat = 0.0;
+    double lon = 0.0;
+};
+
 struct StopTime { std::string trip_id; Time arrival_time; Time departure_time; int stop_id; int stop_sequence; };
 struct Transfer { int from_stop_id; int to_stop_id; int duration_seconds; };
 
-// A multi-criteria journey "label"
+// A multi-criteria journey "label" with all necessary fields
 struct Journey {
     Time arrival_time;
     int trips;
+    Time departure_time;
+    int from_stop_id = -1;
+    std::string method;
 };
 
 // --- Helper Functions ---
-
-// Operator to print Time objects
 std::ostream& operator<<(std::ostream& os, const Time& t);
 
 #endif // DATATYPES_H_INCLUDED

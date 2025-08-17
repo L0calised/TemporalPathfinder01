@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporal Pathfinder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Temporal Pathfinder 🚆</h1>
+        </header>
+        <main>
+            <div class="controls">
+                <div class="select-group">
+                    <label for="start-stop">From:</label>
+                    <select id="start-stop"></select>
+                </div>
+                <div class="select-group">
+                    <label for="end-stop">To:</label>
+                    <select id="end-stop"></select>
+                </div>
+                <div class="select-group">
+                    <label for="start-time">Time (HH:MM:SS):</label>
+                    <input type="text" id="start-time" value="07:55:00">
+                </div>
+                <button id="find-route-btn">Find Route</button>
+            </div>
+            <div id="results-container">
+                <p>Please select a route to begin.</p>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

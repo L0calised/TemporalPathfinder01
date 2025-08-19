@@ -24,9 +24,8 @@ This is how the application looks in action. The interface allows users to input
 
 | Web Interface | Server Log |
 |---------------|------------|
-| ![UI Screenshot](assets/web-ui.png) | ![Log Screenshot](assets/server-log.png) |
+| ![UI Screenshot](img/Screenshot%202025-08-20%20005027.png) | ![Log Screenshot](img/Screenshot%202025-08-20%20005141.png) |
 
-> **Note:** To make these images appear in your own repository, create an `assets/` folder (or `.github/`) and place your screenshots there.
 
 ---
 
@@ -123,3 +122,4 @@ See the [`LICENSE`](LICENSE) file for more details.
 
 Would you like me to also design a **nice project banner/logo** (with “Temporal Pathfinder 🗺️”) that you can put at the very top of the README? That way it will look more professional like popular repos.
 ```
+

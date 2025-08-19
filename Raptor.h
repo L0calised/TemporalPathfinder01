@@ -15,7 +15,7 @@ struct PathStep {
 };
 
 // Main algorithm function declaration
-void runMultiCriteriaRaptor(int start_stop_id, const Time& start_time,
+void runMultiCriteriaRaptor(int start_stop_id, int end_stop_id, const Time& start_time,
                             const std::map<int, Stop>& stops,
                             const std::map<int, std::vector<Transfer>>& transfers_map,
                             const std::map<std::string, std::vector<StopTime>>& trips_map,

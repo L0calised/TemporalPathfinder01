@@ -1,10 +1,12 @@
 #ifndef DATATYPES_H_INCLUDED
 #define DATATYPES_H_INCLUDED
 
+#define _USE_MATH_DEFINES // For M_PI constant
 #include <iostream>
 #include <vector>
 #include <string>
 #include <cstdio>
+#include <cmath> // --- NEW --- For math functions
 
 // --- Core Data Structures ---
 
@@ -36,7 +38,6 @@ struct Stop {
 struct StopTime { std::string trip_id; Time arrival_time; Time departure_time; int stop_id; int stop_sequence; };
 struct Transfer { int from_stop_id; int to_stop_id; int duration_seconds; };
 
-// A multi-criteria journey "label" with all necessary fields
 struct Journey {
     Time arrival_time;
     int trips;
@@ -47,5 +48,24 @@ struct Journey {
 
 // --- Helper Functions ---
 std::ostream& operator<<(std::ostream& os, const Time& t);
+
+
+// --- NEW FUNCTION ---
+// Calculates the distance in meters between two lat/lon points
+inline double haversine(double lat1, double lon1, double lat2, double lon2) {
+    const double R = 6371000.0; // Earth radius in meters
+    double phi1 = lat1 * M_PI / 180.0;
+    double phi2 = lat2 * M_PI / 180.0;
+    double delta_phi = (lat2 - lat1) * M_PI / 180.0;
+    double delta_lambda = (lon2 - lon1) * M_PI / 180.0;
+
+    double a = sin(delta_phi / 2.0) * sin(delta_phi / 2.0) +
+               cos(phi1) * cos(phi2) *
+               sin(delta_lambda / 2.0) * sin(delta_lambda / 2.0);
+    double c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+
+    return R * c; // in meters
+}
+
 
 #endif // DATATYPES_H_INCLUDED

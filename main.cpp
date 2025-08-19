@@ -134,6 +134,13 @@ int main() {
         int start_node = std::stoi(req.get_param_value("from"));
         int end_node = std::stoi(req.get_param_value("to"));
         std::string time_str = req.get_param_value("time");
+        // --- ADD THESE DEBUGGING LINES ---
+        std::cout << "--------------------------------" << std::endl;
+        std::cout << "New Route Request:" << std::endl;
+        std::cout << "FROM: " << start_node << " (" << getStopName(start_node, stops) << ")" << std::endl;
+        std::cout << "TO:   " << end_node << " (" << getStopName(end_node, stops) << ")" << std::endl;
+        std::cout << "TIME: " << time_str << std::endl;
+        std::cout << "--------------------------------" << std::endl;
 
         // Execute the RAPTOR algorithm
         std::map<int, std::vector<Journey>> final_profiles;
@@ -142,7 +149,7 @@ int main() {
         std::map<int, std::map<int, Journey>> predecessors;
 
         // *** FIX 2: PASS the predecessors map to the function ***
-        runMultiCriteriaRaptor(start_node, Time(time_str), stops, transfers_map, trips_map, routes_serving_stop, final_profiles, predecessors);
+        runMultiCriteriaRaptor(start_node, end_node, Time(time_str), stops, transfers_map, trips_map, routes_serving_stop, final_profiles, predecessors);
 
         // Format the result as a JSON string
         std::stringstream json;

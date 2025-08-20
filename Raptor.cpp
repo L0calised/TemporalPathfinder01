@@ -53,56 +53,53 @@ void runMultiCriteriaRaptor(int start_stop_id, int end_stop_id, const Time& star
         }
     }
 
-    // --- NEW, HIGH-PERFORMANCE RAPTOR ROUNDS ---
+    // RAPTOR Rounds
     for (int k = 1; k <= MAX_TRIPS; ++k) {
-        std::map<int, std::vector<Journey>> newly_reached_stops;
-        std::set<std::string> marked_trips;
-
-        // Collect all trips that serve stops reached in the previous round
+        std::map<int, std::vector<Journey>> reached_this_round;
         for (const auto& pair : profiles_by_round[k - 1]) {
-            if (routes_serving_stop.count(pair.first)) {
-                for (const auto& trip_id : routes_serving_stop.at(pair.first)) {
-                    marked_trips.insert(trip_id);
-                }
-            }
-        }
+            int stop_id = pair.first;
+            if (routes_serving_stop.count(stop_id)) {
+                for (const auto& trip_id : routes_serving_stop.at(stop_id)) {
+                    const auto& schedule = trips_map.at(trip_id);
+                    int boarding_stop_seq = -1;
+                    for (size_t i = 0; i < schedule.size(); ++i) {
+                        if (schedule[i].stop_id == stop_id) {
+                            boarding_stop_seq = i;
+                            break;
+                        }
+                    }
 
-        // Process each marked trip only once
-        for (const auto& trip_id : marked_trips) {
-            Journey current_trip_journey;
-            current_trip_journey.from_stop_id = -1; // Sentinel: not on board yet
-            int boarding_stop_seq_index = -1;
-
-            const auto& schedule = trips_map.at(trip_id);
-            for (size_t i = 0; i < schedule.size(); ++i) {
-                const auto& stop_time = schedule[i];
-
-                if (profiles_by_round[k - 1].count(stop_time.stop_id)) {
-                    for (const auto& prev_journey : profiles_by_round[k - 1].at(stop_time.stop_id)) {
-                        if (prev_journey.arrival_time <= stop_time.departure_time) {
-                            if (current_trip_journey.from_stop_id == -1 || prev_journey.arrival_time < current_trip_journey.arrival_time) {
-                                current_trip_journey = prev_journey;
-                                boarding_stop_seq_index = i;
+                    if (boarding_stop_seq != -1) {
+                        Journey current_trip_journey;
+                        current_trip_journey.from_stop_id = -1;
+                        for (size_t i = boarding_stop_seq; i < schedule.size(); ++i) {
+                            const auto& stop_time = schedule[i];
+                            if (profiles_by_round[k - 1].count(stop_time.stop_id)) {
+                                for (const auto& prev_journey : profiles_by_round[k-1].at(stop_time.stop_id)) {
+                                    if (prev_journey.arrival_time <= stop_time.departure_time) {
+                                        if (current_trip_journey.from_stop_id == -1 || prev_journey.arrival_time < current_trip_journey.arrival_time) {
+                                            current_trip_journey = prev_journey;
+                                        }
+                                    }
+                                }
+                            }
+                            if (current_trip_journey.from_stop_id != -1) {
+                                int predecessor_id = (i > static_cast<size_t>(boarding_stop_seq)) ? schedule[i-1].stop_id : current_trip_journey.from_stop_id;
+                                Journey new_journey = {stop_time.arrival_time, k, current_trip_journey.departure_time, predecessor_id, "Trip " + trip_id};
+                                merge(reached_this_round[stop_time.stop_id], new_journey);
                             }
                         }
                     }
                 }
-
-                if (current_trip_journey.from_stop_id != -1) {
-                    int predecessor_id = (i > static_cast<size_t>(boarding_stop_seq_index)) ? schedule[i - 1].stop_id : current_trip_journey.from_stop_id;
-                    Journey new_journey = {stop_time.arrival_time, k, current_trip_journey.departure_time, predecessor_id, "Trip " + trip_id};
-                    merge(newly_reached_stops[stop_time.stop_id], new_journey);
-                }
             }
         }
 
-        // Add transfers from newly reached stops
-        for (const auto& pair : newly_reached_stops) {
+        for (const auto& pair : reached_this_round) {
             for (const auto& journey : pair.second) {
-                merge(profiles_by_round[k][pair.first], journey); // Add trip results to main profile
+                merge(profiles_by_round[k][pair.first], journey);
                 if (transfers_map.count(pair.first)) {
                     for (const auto& transfer : transfers_map.at(pair.first)) {
-                        Journey transfer_journey = {Time::fromSeconds(journey.arrival_time.toSeconds() + transfer.duration_seconds), journey.trips, journey.departure_time, pair.first, "Walk"};
+                        Journey transfer_journey = { Time::fromSeconds(journey.arrival_time.toSeconds() + transfer.duration_seconds), journey.trips, journey.departure_time, pair.first, "Walk" };
                         merge(profiles_by_round[k][transfer.to_stop_id], transfer_journey);
                     }
                 }
@@ -110,7 +107,7 @@ void runMultiCriteriaRaptor(int start_stop_id, int end_stop_id, const Time& star
         }
     }
 
-    // --- EFFICIENT FINALIZATION LOGIC ---
+    // --- NEW, EFFICIENT FINALIZATION LOGIC ---
     std::map<int, std::vector<Journey>> temp_final_profiles;
     for (int k = 0; k <= MAX_TRIPS; ++k) {
         for (const auto& profile_pair : profiles_by_round[k]) {
@@ -121,14 +118,17 @@ void runMultiCriteriaRaptor(int start_stop_id, int end_stop_id, const Time& star
         }
     }
 
+    const Stop& end_stop_details = stops.at(end_stop_id);
     for (const auto& profile_pair : temp_final_profiles) {
         int reached_stop_id = profile_pair.first;
+        if (reached_stop_id == end_stop_id) continue; // No need to walk from destination to itself
+
         const Stop& reached_stop_details = stops.at(reached_stop_id);
-        double distance = haversine(reached_stop_details.lat, reached_stop_details.lon, stops.at(end_stop_id).lat, stops.at(end_stop_id).lon);
+        double distance = haversine(reached_stop_details.lat, reached_stop_details.lon, end_stop_details.lat, end_stop_details.lon);
         if (distance <= MAX_WALK_DISTANCE_METERS) {
             int walk_duration_seconds = static_cast<int>(distance / WALKING_SPEED_MPS);
             for (const auto& journey : profile_pair.second) {
-                 Journey final_walk = {Time::fromSeconds(journey.arrival_time.toSeconds() + walk_duration_seconds), journey.trips, journey.departure_time, reached_stop_id, "Walk"};
+                 Journey final_walk = { Time::fromSeconds(journey.arrival_time.toSeconds() + walk_duration_seconds), journey.trips, journey.departure_time, reached_stop_id, "Walk" };
                 merge(final_profiles[end_stop_id], final_walk);
             }
         }
